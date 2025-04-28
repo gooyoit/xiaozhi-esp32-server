@@ -165,3 +165,6 @@ main/manager-api/.vscode
 main/manager-web/.webpack_cache/
 main/xiaozhi-server/mysql
 uploadfile
+
+.vscode/
+main/manager-web/package-lock.json
