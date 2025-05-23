@@ -35,10 +35,11 @@
           OTA管理
         </div>
         <el-dropdown v-if="isSuperAdmin" trigger="click" class="equipment-management more-dropdown"
-          :class="{ 'active-tab': $route.path === '/dict-management' || $route.path === '/params-management' || $route.path === '/provider-management' }" @visible-change="handleParamDropdownVisibleChange">
+          :class="{ 'active-tab': $route.path === '/dict-management' || $route.path === '/params-management' || $route.path === '/provider-management' || $route.path === '/server-side-management' }"
+          @visible-change="handleParamDropdownVisibleChange">
           <span class="el-dropdown-link">
             <img loading="lazy" alt="" src="@/assets/header/param_management.png"
-              :style="{ filter: $route.path === '/dict-management' || $route.path === '/params-management' || $route.path === '/provider-management' ? 'brightness(0) invert(1)' : 'None' }" />
+              :style="{ filter: $route.path === '/dict-management' || $route.path === '/params-management' || $route.path === '/provider-management' || $route.path === '/server-side-management' ? 'brightness(0) invert(1)' : 'None' }" />
             参数字典
             <i class="el-icon-arrow-down el-icon--right" :class="{ 'rotate-down': paramDropdownVisible }"></i>
           </span>
@@ -52,13 +53,16 @@
             <el-dropdown-item @click.native="goProviderManagement">
               供应器管理
             </el-dropdown-item>
+            <el-dropdown-item @click.native="goServerSideManagement">
+              服务端管理
+            </el-dropdown-item>
           </el-dropdown-menu>
         </el-dropdown>
       </div>
 
       <!-- 右侧元素 -->
       <div class="header-right">
-        <div class="search-container" v-if="$route.path === '/home'">
+        <div class="search-container" v-if="$route.path === '/home' && !(isSuperAdmin && isSmallScreen)">
           <el-input v-model="search" placeholder="输入名称搜索.." class="custom-search-input"
             @keyup.enter.native="handleSearch">
             <i slot="suffix" class="el-icon-search search-icon" @click="handleSearch"></i>
@@ -103,7 +107,8 @@ export default {
       },
       isChangePasswordDialogVisible: false, // 控制修改密码弹窗的显示
       userDropdownVisible: false,
-      paramDropdownVisible: false
+      paramDropdownVisible: false,
+      isSmallScreen: false
     }
   },
   computed: {
@@ -113,7 +118,13 @@ export default {
     }
   },
   mounted() {
-    this.fetchUserInfo()
+    this.fetchUserInfo();
+    this.checkScreenSize();
+    window.addEventListener('resize', this.checkScreenSize);
+  },
+  //移除事件监听器
+  beforeDestroy() {
+    window.removeEventListener('resize', this.checkScreenSize);
   },
   methods: {
     goHome() {
@@ -138,6 +149,9 @@ export default {
     goProviderManagement() {
       this.$router.push('/provider-management')
     },
+    goServerSideManagement() {
+      this.$router.push('/server-side-management')
+    },
     // 获取用户信息
     fetchUserInfo() {
       userApi.getUserInfo(({ data }) => {
@@ -147,7 +161,9 @@ export default {
         }
       })
     },
-
+    checkScreenSize() {
+      this.isSmallScreen = window.innerWidth <= 1386;
+    },
     // 处理搜索
     handleSearch() {
       const searchValue = this.search.trim();
@@ -313,6 +329,12 @@ export default {
   line-height: 30px;
 }
 
+.custom-search-input::v-deep .el-input__suffix-inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
 .avatar-img {
   width: 21px;
   height: 21px;
@@ -354,45 +376,6 @@ export default {
   }
 }
 
-@media (max-width: 1024px) {
-  .search-container {
-    margin-right: 10px;
-    max-width: 150px;
-  }
-
-  .header-right {
-    gap: 5px;
-  }
-}
-
-@media (max-width: 900px) {
-  .header-left {
-    margin-right: auto;
-  }
-
-  .search-container {
-    max-width: 150px;
-  }
-}
-
-@media (max-width: 768px) {
-  .search-container {
-    max-width: 145px;
-  }
-
-  .custom-search-input>>>.el-input__inner {
-    padding-left: 10px;
-    font-size: 11px;
-  }
-}
-
-@media (max-width: 600px) {
-  .search-container {
-    max-width: 120px;
-    min-width: 100px;
-  }
-}
-
 .equipment-management.more-dropdown {
   position: relative;
 }
@@ -410,14 +393,5 @@ export default {
   font-size: 14px;
   color: #606266;
   white-space: nowrap;
-}
-
-@media (max-width: 768px) {
-  .equipment-management.more-dropdown .el-dropdown-menu {
-    position: fixed;
-    right: 10px;
-    top: 60px;
-    z-index: 2000;
-  }
 }
 </style>

@@ -22,6 +22,7 @@ from core.utils.util import (
     initialize_modules,
     check_vad_update,
     check_asr_update,
+    filter_sensitive_info,
 )
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from core.handle.sendAudioHandle import sendAudioMessage
@@ -231,7 +232,9 @@ class ConnectionHandler:
                         # 创建新事件循环（避免与主循环冲突）
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
-                        loop.run_until_complete(self.memory.save_memory(self.dialogue.dialogue))
+                        loop.run_until_complete(
+                            self.memory.save_memory(self.dialogue.dialogue)
+                        )
                     except Exception as e:
                         self.logger.bind(tag=TAG).error(f"保存记忆失败: {e}")
                     finally:
@@ -271,9 +274,10 @@ class ConnectionHandler:
             await self.websocket.send(
                 json.dumps(
                     {
-                        "type": "server_response",
+                        "type": "server",
                         "status": "success",
                         "message": "服务器重启中...",
+                        "content": {"action": "restart"},
                     }
                 )
             )
@@ -300,9 +304,10 @@ class ConnectionHandler:
             await self.websocket.send(
                 json.dumps(
                     {
-                        "type": "server_response",
+                        "type": "server",
                         "status": "error",
                         "message": f"Restart failed: {str(e)}",
+                        "content": {"action": "restart"},
                     }
                 )
             )
@@ -441,10 +446,10 @@ class ConnectionHandler:
     def _initialize_memory(self):
         """初始化记忆模块"""
         self.memory.init_memory(
-            self.device_id,
-            self.llm,
-            self.config["summaryMemory"],
-            not self.read_config_from_api,
+            role_id=self.device_id,
+            llm=self.llm,
+            summary_memory=self.config.get("summaryMemory", None),
+            save_to_file=not self.read_config_from_api,
         )
 
     def _initialize_intent(self):
@@ -1085,37 +1090,3 @@ class ConnectionHandler:
                     break
         except Exception as e:
             self.logger.bind(tag=TAG).error(f"超时检查任务出错: {e}")
-
-
-def filter_sensitive_info(config: dict) -> dict:
-    """
-    过滤配置中的敏感信息
-    Args:
-        config: 原始配置字典
-    Returns:
-        过滤后的配置字典
-    """
-    sensitive_keys = [
-        "api_key",
-        "personal_access_token",
-        "access_token",
-        "token",
-        "secret",
-        "access_key_secret",
-        "secret_key",
-    ]
-
-    def _filter_dict(d: dict) -> dict:
-        filtered = {}
-        for k, v in d.items():
-            if any(sensitive in k.lower() for sensitive in sensitive_keys):
-                filtered[k] = "***"
-            elif isinstance(v, dict):
-                filtered[k] = _filter_dict(v)
-            elif isinstance(v, list):
-                filtered[k] = [_filter_dict(i) if isinstance(i, dict) else i for i in v]
-            else:
-                filtered[k] = v
-        return filtered
-
-    return _filter_dict(copy.deepcopy(config))
