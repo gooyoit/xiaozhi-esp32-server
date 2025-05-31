@@ -3,8 +3,8 @@ import time
 import asyncio
 from aiohttp import web
 from config.logger import setup_logging
-from core.connection import ConnectionHandler
-from core.utils.util import get_local_ip, initialize_modules
+from core.utils.util import get_local_ip
+from core.utils.modules_initialize import initialize_modules
 
 TAG = __name__
 
@@ -98,7 +98,6 @@ class SimpleOtaServer:
                 content_type="application/json",
             )
         except Exception as e:
-            self.logger.bind(tag=TAG).error(f"OTA请求异常: {e}")
             return_json = {"success": False, "message": "request error."}
             response = web.Response(
                 text=json.dumps(return_json, separators=(",", ":")),
