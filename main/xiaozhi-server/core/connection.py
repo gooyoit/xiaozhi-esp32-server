@@ -35,7 +35,6 @@ from plugins_func.loadplugins import auto_import_modules
 from plugins_func.register import Action, ActionResponse
 from core.auth import AuthMiddleware, AuthenticationError
 from config.config_loader import get_private_config_from_api
-from core.handle.receiveAudioHandle import handleAudioMessage
 from core.providers.tts.dto.dto import ContentType, TTSMessageDTO, SentenceType
 from config.logger import setup_logging, build_module_string, update_module_string
 from config.manage_api_client import DeviceNotFoundException, DeviceBindException
@@ -81,6 +80,7 @@ class ConnectionHandler:
         self.welcome_msg = None
         self.max_output_size = 0
         self.chat_history_conf = 0
+        self.audio_format = "opus"
 
         # 客户端状态相关
         self.client_abort = False
@@ -117,7 +117,10 @@ class ConnectionHandler:
         self.client_voice_stop = False
 
         # asr相关变量
+        # 因为实际部署时可能会用到公共的本地ASR，不能把变量暴露给公共ASR
+        # 所以涉及到ASR的变量，需要在这里定义，属于connection的私有变量
         self.asr_audio = []
+        self.asr_audio_queue = queue.Queue()
 
         # llm相关变量
         self.llm_finish_task = True
@@ -146,7 +149,6 @@ class ConnectionHandler:
             int(self.config.get("close_connection_no_voice_time", 120)) + 60
         )  # 在原来第一道关闭的基础上加60秒，进行二道关闭
 
-        self.audio_format = "opus"
         # {"mcp":true} 表示启用MCP功能
         self.features = None
 
@@ -254,7 +256,11 @@ class ConnectionHandler:
         if isinstance(message, str):
             await handleTextMessage(self, message)
         elif isinstance(message, bytes):
-            await handleAudioMessage(self, message)
+            if self.vad is None:
+                return
+            if self.asr is None:
+                return
+            self.asr_audio_queue.put(message)
 
     async def handle_restart(self, message):
         """处理服务器重启请求"""
@@ -478,6 +484,8 @@ class ConnectionHandler:
             self.memory = modules["memory"]
 
     def _initialize_memory(self):
+        if self.memory is None:
+            return
         """初始化记忆模块"""
         self.memory.init_memory(
             role_id=self.device_id,
@@ -518,6 +526,8 @@ class ConnectionHandler:
                 self.logger.bind(tag=TAG).info("使用主LLM作为意图识别模型")
 
     def _initialize_intent(self):
+        if self.intent is None:
+            return
         self.intent_type = self.config["Intent"][
             self.config["selected_module"]["Intent"]
         ]["type"]
@@ -641,7 +651,7 @@ class ConnectionHandler:
                     # print("content_arguments", content_arguments)
                     tool_call_flag = True
 
-                if tools_call is not None:
+                if tools_call is not None and len(tools_call) > 0:
                     tool_call_flag = True
                     if tools_call[0].id is not None:
                         function_id = tools_call[0].id
@@ -708,15 +718,24 @@ class ConnectionHandler:
                 # 处理Server端MCP工具调用
                 if self.mcp_manager.is_mcp_tool(function_name):
                     result = self._handle_mcp_tool_call(function_call_data)
-                elif hasattr(self, "mcp_client") and self.mcp_client.has_tool(function_name):
-                    # 如果是小智端MCP工具调用 
+                elif hasattr(self, "mcp_client") and self.mcp_client.has_tool(
+                    function_name
+                ):
+                    # 如果是小智端MCP工具调用
                     self.logger.bind(tag=TAG).debug(
                         f"调用小智端MCP工具: {function_name}, 参数: {function_arguments}"
                     )
                     try:
-                        result = asyncio.run_coroutine_threadsafe(call_mcp_tool(self, self.mcp_client, function_name, function_arguments), self.loop).result()
+                        result = asyncio.run_coroutine_threadsafe(
+                            call_mcp_tool(
+                                self, self.mcp_client, function_name, function_arguments
+                            ),
+                            self.loop,
+                        ).result()
                         self.logger.bind(tag=TAG).debug(f"MCP工具调用结果: {result}")
-                        result = ActionResponse(action=Action.REQLLM, result=result, response="")
+                        result = ActionResponse(
+                            action=Action.REQLLM, result=result, response=""
+                        )
                     except Exception as e:
                         self.logger.bind(tag=TAG).error(f"MCP工具调用失败: {e}")
                         result = ActionResponse(
