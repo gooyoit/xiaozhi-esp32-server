@@ -1,96 +1,78 @@
 <template>
-  <el-dialog
-      :visible.sync="localVisible"
-      width="85%"
-      @close="handleClose"
-      :show-close="false"
-      :append-to-body="true"
-      :close-on-click-modal="true">
+  <el-dialog :visible.sync="localVisible" width="90%" @close="handleClose" :show-close="false" :append-to-body="true"
+    :close-on-click-modal="true">
     <button class="custom-close-btn" @click="handleClose">
       ×
     </button>
     <div class="scroll-wrapper">
-      <div
-          class="table-container"
-          ref="tableContainer"
-          @scroll="handleScroll">
-          <el-table
-              v-loading="loading"
-              :data="filteredTtsModels"
-              style="width: 100%;"
-              class="data-table"
-              header-row-class-name="table-header"
-              :fit="true"
-              element-loading-text="拼命加载中"
-              element-loading-spinner="el-icon-loading"
-              element-loading-background="rgba(0, 0, 0, 0.8)">
-          <el-table-column label="选择" width="50" align="center">
+      <div class="table-container" ref="tableContainer" @scroll="handleScroll">
+        <el-table v-loading="loading" :data="filteredTtsModels" style="width: 100%;" class="data-table"
+          header-row-class-name="table-header" :fit="true" :element-loading-text="$t('voicePrint.loading')"
+          element-loading-spinner="el-icon-loading" element-loading-background="rgba(0, 0, 0, 0.8)">
+          <el-table-column :label="$t('ttsModel.select')" width="50" align="center">
             <template slot-scope="scope">
               <el-checkbox v-model="scope.row.selected"></el-checkbox>
             </template>
           </el-table-column>
-          <el-table-column label="音色编码" align="center" min-width="50">
+          <el-table-column :label="$t('ttsModel.voiceCode')" align="center">
             <template slot-scope="scope">
               <el-input v-if="scope.row.editing" v-model="scope.row.voiceCode"></el-input>
               <span v-else>{{ scope.row.voiceCode }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="音色名称" align="center" min-width="50">
+          <el-table-column :label="$t('ttsModel.voiceName')" align="center">
             <template slot-scope="scope">
               <el-input v-if="scope.row.editing" v-model="scope.row.voiceName"></el-input>
               <span v-else>{{ scope.row.voiceName }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="语言类型" align="center" min-width="50">
+          <el-table-column :label="$t('ttsModel.languageType')" align="center">
             <template slot-scope="scope">
               <el-input v-if="scope.row.editing" v-model="scope.row.languageType"></el-input>
               <span v-else>{{ scope.row.languageType }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="试听" align="center" min-width="100px" class-name="audio-column">
+          <el-table-column v-if="!showReferenceColumns" :label="$t('ttsModel.preview')" align="center" class-name="audio-column">
             <template slot-scope="scope">
               <div class="custom-audio-container">
-                <el-input
-                    v-if="scope.row.editing"
-                    v-model="scope.row.voiceDemo"
-                    placeholder="请输入MP3地址"
-                    size="mini"
-                    class="audio-input">
+                <el-input v-if="scope.row.editing" v-model="scope.row.voiceDemo" :placeholder="$t('ttsModel.enterMp3Url')"
+                  class="audio-input">
                 </el-input>
-                <AudioPlayer v-else-if="isValidAudioUrl(scope.row.voiceDemo)" :audioUrl="scope.row.voiceDemo"/>
+                <AudioPlayer v-else-if="isValidAudioUrl(scope.row.voiceDemo)" :audioUrl="scope.row.voiceDemo" />
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="备注" align="center">
+          <el-table-column v-if="!showReferenceColumns" :label="$t('ttsModel.remark')" align="center">
             <template slot-scope="scope">
-              <el-input
-                  v-if="scope.row.editing"
-                  type="textarea"
-                  :rows="1"
-                  autosize
-                  v-model="scope.row.remark"
-                  placeholder="这里是备注"
-                  class="remark-input"></el-input>
+              <el-input v-if="scope.row.editing" type="textarea" :rows="1" autosize v-model="scope.row.remark"
+                  :placeholder="$t('ttsModel.enterRemark')" class="remark-input"></el-input>
               <span v-else>{{ scope.row.remark }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="150">
+          <el-table-column v-if="showReferenceColumns" :label="$t('ttsModel.cloneAudioPath')" align="center">
+            <template slot-scope="scope">
+              <el-input v-if="scope.row.editing" v-model="scope.row.referenceAudio" :placeholder="$t('ttsModel.enterCloneAudioPath')"></el-input>
+              <span v-else>{{ scope.row.referenceAudio }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column v-if="showReferenceColumns" :label="$t('ttsModel.cloneAudioText')" align="center">
+            <template slot-scope="scope">
+              <el-input v-if="scope.row.editing" v-model="scope.row.referenceText" :placeholder="$t('ttsModel.enterCloneAudioText')"></el-input>
+              <span v-else>{{ scope.row.referenceText }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column :label="$t('ttsModel.operation')" align="center" width="150">
             <template slot-scope="scope">
               <template v-if="!scope.row.editing">
                 <el-button type="text" size="mini" @click="startEdit(scope.row)" class="edit-btn">
-                  编辑
-                </el-button>
-                <el-button type="text" size="mini" @click="deleteRow(scope.row)" class="delete-btn">
-                  删除
-                </el-button>
+                    {{ $t('ttsModel.edit') }}
+                  </el-button>
+                  <el-button type="text" size="mini" @click="deleteRow(scope.row)" class="delete-btn">
+                    {{ $t('ttsModel.delete') }}
+                  </el-button>
               </template>
-              <el-button
-                  v-else
-                  type="success"
-                  size="mini"
-                  @click="saveEdit(scope.row)"
-                  class="save-Tts">保存
-              </el-button>
+              <el-button v-else type="success" size="mini" @click="saveEdit(scope.row)" class="save-Tts">{{ $t('ttsModel.save') }}
+                </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -105,26 +87,24 @@
     </div>
     <div class="action-buttons">
       <el-button type="primary" size="mini" @click="toggleSelectAll" style="background: #606ff3;border: None">
-        {{ selectAll ? '取消全选' : '全选' }}
+        {{ selectAll ? $t('ttsModel.deselectAll') : $t('ttsModel.selectAll') }}
       </el-button>
       <el-button type="primary" size="mini" @click="addNew" style="background: #5bc98c;border: None;">
-        新增
+        {{ $t('ttsModel.add') }}
       </el-button>
-      <el-button type="primary"
-                 size="mini"
-                 @click="deleteRow(filteredTtsModels.filter(row => row.selected))"
-                 style="background: red;border:None">删除
+      <el-button type="primary" size="mini" @click="deleteRow(filteredTtsModels.filter(row => row.selected))"
+        style="background: red;border:None">{{ $t('ttsModel.delete') }}
       </el-button>
     </div>
   </el-dialog>
 </template>
 
 <script>
-import AudioPlayer from './AudioPlayer.vue'
 import Api from "@/apis/api";
+import AudioPlayer from './AudioPlayer.vue';
 
 export default {
-  components: {AudioPlayer},
+  components: { AudioPlayer },
   props: {
     visible: {
       type: Boolean,
@@ -133,6 +113,10 @@ export default {
     ttsModelId: {
       type: String,
       required: true
+    },
+    modelConfig: {
+      type: Object,
+      default: null
     }
   },
   data() {
@@ -151,6 +135,7 @@ export default {
       selectAll: false,
       selectedRows: [],
       loading: false,
+      showReferenceColumns: false, // 控制是否显示参考列
     };
   },
   watch: {
@@ -158,11 +143,18 @@ export default {
       this.localVisible = newVal;
       if (newVal) {
         this.currentPage = 1;
+        this.updateShowReferenceColumns(); // 更新显示状态
         this.loadData(); // 对话框显示时加载数据
         this.$nextTick(() => {
           this.updateScrollbar();
         });
       }
+    },
+    modelConfig: {
+      handler(newVal) {
+        this.updateShowReferenceColumns();
+      },
+      immediate: true
     },
     filteredTtsModels() {
       this.$nextTick(() => {
@@ -173,7 +165,7 @@ export default {
   computed: {
     filteredTtsModels() {
       return this.ttsModels.filter(model =>
-          model.voiceName.toLowerCase().includes(this.searchQuery.toLowerCase())
+        model.voiceName.toLowerCase().includes(this.searchQuery.toLowerCase())
       );
     }
   },
@@ -189,6 +181,16 @@ export default {
     window.removeEventListener('mousemove', this.handleDrag);
   },
   methods: {
+    // 更新是否显示参考列
+    updateShowReferenceColumns() {
+      if (this.modelConfig && this.modelConfig.configJson) {
+        const providerType = this.modelConfig.configJson.type;
+        this.showReferenceColumns = ['fishspeech', 'gpt_sovits_v2', 'gpt_sovits_v3'].includes(providerType);
+      } else {
+        this.showReferenceColumns = false;
+      }
+    },
+
     loadData() {
       this.loading = true;
       const params = {
@@ -203,9 +205,11 @@ export default {
             .map(item => ({
               id: item.id || '',
               voiceCode: item.ttsVoice || '',
-              voiceName: item.name || '未命名音色',
+              voiceName: item.name || this.$t('ttsModel.unnamedVoice'),
               languageType: item.languages || '',
               remark: item.remark || '',
+              referenceAudio: item.referenceAudio || '',
+              referenceText: item.referenceText || '',
               voiceDemo: item.voiceDemo || '',
               selected: false,
               editing: false,
@@ -215,7 +219,7 @@ export default {
           this.total = data.total;
         } else {
           this.$message.error({
-            message: data.msg || '获取音色列表失败',
+            message: data.msg || this.$t('ttsModel.getVoiceListFailed'),
             showClose: true
           });
         }
@@ -223,7 +227,7 @@ export default {
       }, (err) => {
         console.error('加载失败:', err);
         this.$message.error({
-          message: '加载音色数据失败',
+          message: this.$t('ttsModel.loadVoiceDataFailed'),
           showClose: true
         });
         this.loading = false;
@@ -237,6 +241,7 @@ export default {
       this.total = 0;
       this.selectAll = false;
       this.searchQuery = '';
+      this.showReferenceColumns = false;
 
       this.localVisible = false;
       this.$emit('update:visible', false);
@@ -249,7 +254,7 @@ export default {
 
       if (!container || !scrollbarThumb || !scrollbarTrack) return;
 
-      const {scrollHeight, clientHeight} = container;
+      const { scrollHeight, clientHeight } = container;
       const trackHeight = scrollbarTrack.clientHeight;
       const thumbHeight = Math.max((clientHeight / scrollHeight) * trackHeight, 20);
 
@@ -264,7 +269,7 @@ export default {
 
       if (!container || !scrollbarThumb || !scrollbarTrack) return;
 
-      const {scrollHeight, clientHeight, scrollTop} = container;
+      const { scrollHeight, clientHeight, scrollTop } = container;
       const trackHeight = scrollbarTrack.clientHeight;
       const thumbHeight = scrollbarThumb.clientHeight;
       const maxTop = trackHeight - thumbHeight;
@@ -332,13 +337,13 @@ export default {
 
     startEdit(row) {
       row.editing = true;
-      this.$set(row, 'originalData', {...row});
+      this.$set(row, 'originalData', { ...row });
     },
 
     saveEdit(row) {
       if (!row.voiceCode || !row.voiceName || !row.languageType) {
         this.$message.error({
-          message: '音色编码、音色名称和语言类型不能为空',
+          message: this.$t('ttsModel.voiceCodeNameLanguageRequired'),
           showClose: true
         });
         return;
@@ -355,6 +360,12 @@ export default {
           voiceDemo: row.voiceDemo || '',
           sort: row.sort
         };
+
+        // 只有在显示参考列的情况下才添加参考字段
+        if (this.showReferenceColumns) {
+          params.referenceAudio = row.referenceAudio;
+          params.referenceText = row.referenceText;
+        }
 
         let res;
         if (row.id) {
@@ -379,7 +390,7 @@ export default {
           delete row.originalData;
         }
         this.$message.error({
-          message: '操作失败，请重试',
+          message: this.$t('ttsModel.operationFailed'),
           showClose: true
         });
       }
@@ -388,7 +399,7 @@ export default {
     handleResponse(res, row) {
       if (res.code === 0) {
         this.$message.success({
-          message: row.id ? '修改成功' : '保存成功',
+          message: row.id ? this.$t('ttsModel.updateSuccess') : this.$t('ttsModel.saveSuccess'),
           showClose: true
         });
         row.editing = false;
@@ -402,9 +413,9 @@ export default {
           delete row.originalData;
         }
         this.$message.error({
-          message: res.msg || (row.id ? '修改失败' : '保存失败'),
-          showClose: true
-        });
+            message: res.msg || (row.id ? this.$t('ttsModel.updateFailed') : this.$t('ttsModel.saveFailed')),
+            showClose: true
+          });
       }
     },
 
@@ -418,20 +429,22 @@ export default {
     addNew() {
       const hasEditing = this.ttsModels.some(row => row.editing);
       if (hasEditing) {
-        this.$message.warning('请先完成当前编辑再新增');
+        this.$message.warning(this.$t('ttsModel.finishEditingFirst'));
         return;
       }
 
       const maxSort = this.ttsModels.length > 0
-          ? Math.max(...this.ttsModels.map(item => Number(item.sort) || 0))
-          : 0;
+        ? Math.max(...this.ttsModels.map(item => Number(item.sort) || 0))
+        : 0;
 
       const newRow = {
         voiceCode: '',
         voiceName: '',
-        languageType: '中文',
+        languageType: this.$t('editVoiceDialog.defaultLanguageType'),
         voiceDemo: '',
         remark: '',
+        referenceAudio: '',
+        referenceText: '',
         selected: false,
         editing: true,
         sort: maxSort + 1
@@ -441,56 +454,56 @@ export default {
     },
 
     deleteRow(row) {
-        // 处理单个音色或音色数组
-        const voices = Array.isArray(row) ? row : [row];
+      // 处理单个音色或音色数组
+      const voices = Array.isArray(row) ? row : [row];
 
-        if (Array.isArray(row) && row.length === 0) {
-            this.$message.warning("请先选择需要删除的音色");
-            return;
+      if (Array.isArray(row) && row.length === 0) {
+        this.$message.warning(this.$t('ttsModel.selectVoiceToDelete'));
+        return;
+      }
+
+
+      const voiceCount = voices.length;
+      this.$confirm(this.$t('ttsModel.confirmDeleteVoice', {count: voiceCount}), this.$t('ttsModel.warning'), {
+        confirmButtonText: this.$t('common.confirm'),
+        cancelButtonText: this.$t('common.cancel'),
+        type: "warning",
+        distinguishCancelAndClose: true
+      }).then(() => {
+        const ids = voices.map(voice => voice.id);
+        if (ids.some(id => !id)) {
+          this.$message.error(this.$t('ttsModel.invalidVoiceId'));
+          return;
         }
 
-
-        const voiceCount = voices.length;
-        this.$confirm(`确定要删除选中的${voiceCount}个音色吗？`, "警告", {
-            confirmButtonText: "确定",
-            cancelButtonText: "取消",
-            type: "warning",
-            distinguishCancelAndClose: true
-        }).then(() => {
-            const ids = voices.map(voice => voice.id);
-            if (ids.some(id => !id)) {
-                this.$message.error("存在无效的音色ID");
-                return;
-            }
-
-        Api.timbre.deleteVoice(ids, ({data}) => {
-            if (data.code === 0) {
-                this.$message.success({
-                    message: `成功删除${voiceCount}个参数`,
-                    showClose: true
-                });
-                this.loadData(); // 刷新参数列表
-            } else {
-                this.$message.error({
-                    message: data.msg || '删除失败，请重试',
-                    showClose: true
-                });
-            }
+        Api.timbre.deleteVoice(ids, ({ data }) => {
+          if (data.code === 0) {
+            this.$message.success({
+              message: this.$t('ttsModel.deleteVoiceSuccess', {count: voiceCount}),
+              showClose: true
+            });
+            this.loadData(); // 刷新参数列表
+          } else {
+            this.$message.error({
+              message: data.msg || this.$t('ttsModel.deleteFailed'),
+              showClose: true
+            });
+          }
         });
       }).catch(action => {
-          if (action === 'cancel') {
-              this.$message({
-                  type: 'info',
-                  message: '已取消删除操作',
-                  duration: 1000
-              });
-          } else {
-              this.$message({
-                  type: 'info',
-                  message: '操作已关闭',
-                  duration: 1000
-              });
-          }
+        if (action === 'cancel') {
+          this.$message({
+            type: 'info',
+            message: this.$t('ttsModel.deleteCancelled'),
+            duration: 1000
+          });
+        } else {
+          this.$message({
+            type: 'info',
+            message: this.$t('ttsModel.operationClosed'),
+            duration: 1000
+          });
+        }
       });
     },
 
@@ -502,7 +515,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-
 ::v-deep .el-dialog {
   border-radius: 8px !important;
   overflow: hidden;
@@ -695,6 +707,7 @@ export default {
   white-space: pre-wrap !important;
   word-break: break-all !important;
 }
+
 /* 按钮组定位调整 */
 .action-buttons {
   position: static;
@@ -719,5 +732,4 @@ export default {
   flex-shrink: 0;
   margin: 2px !important;
 }
-
 </style>

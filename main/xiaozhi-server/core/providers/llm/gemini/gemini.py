@@ -73,8 +73,9 @@ class LLMProvider(LLMProviderBase):
         http_proxy = cfg.get("http_proxy")
         https_proxy = cfg.get("https_proxy")
 
-        if not check_model_key("LLM", self.api_key):
-            raise ValueError("无效的Gemini API Key，请检查是否配置正确")
+        model_key_msg = check_model_key("LLM", self.api_key)
+        if model_key_msg:
+            log.bind(tag=TAG).error(model_key_msg)
 
         if http_proxy or https_proxy:
             log.bind(tag=TAG).info(
@@ -84,7 +85,13 @@ class LLMProvider(LLMProviderBase):
             log.bind(tag=TAG).info(
                 f"Gemini 代理设置成功 - HTTP: {http_proxy}, HTTPS: {https_proxy}"
             )
+        # 配置API密钥
         genai.configure(api_key=self.api_key)
+
+        # 设置请求超时（秒）
+        self.timeout = cfg.get("timeout", 120)  # 默认120秒
+
+        # 创建模型实例
         self.model = genai.GenerativeModel(self.model_name)
 
         self.gen_cfg = GenerationConfig(
@@ -163,6 +170,7 @@ class LLMProvider(LLMProviderBase):
             generation_config=self.gen_cfg,
             tools=tools,
             stream=True,
+            timeout=self.timeout,
         )
 
         try:

@@ -115,7 +115,7 @@ public class SysUserServiceImpl extends BaseServiceImpl<SysUserDao, SysUserEntit
 
         // 判断旧密码是否正确
         if (!PasswordUtils.matches(passwordDTO.getPassword(), sysUserEntity.getPassword())) {
-            throw new RenException("旧密码输入错误");
+            throw new RenException(ErrorCode.OLD_PASSWORD_ERROR);
         }
 
         // 新密码强度

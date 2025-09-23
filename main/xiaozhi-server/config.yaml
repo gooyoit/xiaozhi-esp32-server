@@ -104,7 +104,9 @@ wakeup_words:
   - "喵喵同学"
   - "小滨小滨"
   - "小冰小冰"
-
+# MCP接入点地址，地址格式为：ws://你的mcp接入点ip或者域名:端口号/mcp/?token=你的token
+# 详细教程 https://github.com/xinnan-tech/xiaozhi-esp32-server/blob/main/docs/mcp-endpoint-integration.md
+mcp_endpoint: 你的接入点 websocket地址
 # 插件的基础配置
 plugins:
   # 获取天气插件的配置，这里填写你的api_key
@@ -112,16 +114,20 @@ plugins:
   # 想稳定一点就自行申请替换，每天有1000次免费调用
   # 申请地址：https://console.qweather.com/#/apps/create-key/over
   # 申请后通过这个链接可以找到自己的apihost：https://console.qweather.com/setting?lang=zh
-  get_weather: {"api_host":"mj7p3y7naa.re.qweatherapi.com", "api_key": "a861d0d5e7bf4ee1a83d9a9e4f96d4da", "default_location": "广州" }
+  get_weather:
+    api_host: "mj7p3y7naa.re.qweatherapi.com"
+    api_key: "a861d0d5e7bf4ee1a83d9a9e4f96d4da"
+    default_location: "广州"
   # 获取新闻插件的配置，这里根据需要的新闻类型传入对应的url链接，默认支持社会、科技、财经新闻
   # 更多类型的新闻列表查看 https://www.chinanews.com.cn/rss/
   get_news_from_chinanews:
     default_rss_url: "https://www.chinanews.com.cn/rss/society.xml"
-    category_urls:
-      society: "https://www.chinanews.com.cn/rss/society.xml"
-      world: "https://www.chinanews.com.cn/rss/world.xml"
-      finance: "https://www.chinanews.com.cn/rss/finance.xml"
-  get_news_from_newsnow: {"url": "https://newsnow.busiyi.world/api/s?id="}
+    society_rss_url: "https://www.chinanews.com.cn/rss/society.xml"
+    world_rss_url: "https://www.chinanews.com.cn/rss/world.xml"
+    finance_rss_url: "https://www.chinanews.com.cn/rss/finance.xml"
+  get_news_from_newsnow:
+    url: "https://newsnow.busiyi.world/api/s?id="
+    news_sources: "澎湃新闻;百度热搜;财联社"
   home_assistant:
     devices:
       - 客厅,玩具灯,switch.cuco_cn_460494544_cp1_on_p_2_1
@@ -135,6 +141,19 @@ plugins:
       - ".wav"
       - ".p3"
     refresh_time: 300 # 刷新音乐列表的时间间隔，单位为秒
+
+# 声纹识别配置
+voiceprint:
+  # 声纹接口地址
+  url: 
+  # 说话人配置：speaker_id,名称,描述
+  speakers:
+    - "test1,张三,张三是一个程序员"
+    - "test2,李四,李四是一个产品经理"
+    - "test3,王五,王五是一个设计师"
+  # 声纹识别相似度阈值，范围0.0-1.0，默认0.4
+  # 数值越高越严格，减少误识别但可能增加拒识率
+  similarity_threshold: 0.4
 
 # #####################################################################################
 # ################################以下是角色模型配置######################################
@@ -159,7 +178,7 @@ end_prompt:
   enable: true # 是否开启结束语
   # 结束语
   prompt: |
-    请你以“时间过得真快”未来头，用富有感情、依依不舍的话来结束这场对话吧！
+    请你以"时间过得真快"未来头，用富有感情、依依不舍的话来结束这场对话吧！
 
 # 具体处理时选择的模块(The module selected for specific processing)
 selected_module:
@@ -196,7 +215,7 @@ Intent:
     # 如果你的不想使用selected_module.LLM意图识别，这里最好使用独立的LLM作为意图识别，例如使用免费的ChatGLMLLM
     llm: ChatGLMLLM
     # plugins_func/functions下的模块，可以通过配置，选择加载哪个模块，加载后对话支持相应的function调用
-    # 系统默认已经记载“handle_exit_intent(退出识别)”、“play_music(音乐播放)”插件，请勿重复加载
+    # 系统默认已经记载"handle_exit_intent(退出识别)"、"play_music(音乐播放)"插件，请勿重复加载
     # 下面是加载查天气、角色切换、加载查新闻的插件示例
     functions:
       - get_weather
@@ -206,7 +225,7 @@ Intent:
     # 不需要动type
     type: function_call
     # plugins_func/functions下的模块，可以通过配置，选择加载哪个模块，加载后对话支持相应的function调用
-    # 系统默认已经记载“handle_exit_intent(退出识别)”、“play_music(音乐播放)”插件，请勿重复加载
+    # 系统默认已经记载"handle_exit_intent(退出识别)"、"play_music(音乐播放)"插件，请勿重复加载
     # 下面是加载查天气、角色切换、加载查新闻的插件示例
     functions:
       - change_role
@@ -258,9 +277,19 @@ ASR:
     api_key: none
     output_dir: tmp/
   SherpaASR:
+    # Sherpa-ONNX 本地语音识别（需手动下载模型）
     type: sherpa_onnx_local
     model_dir: models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17
     output_dir: tmp/
+    # 模型类型：sense_voice (多语言) 或 paraformer (中文专用)
+    model_type: sense_voice
+  SherpaParaformerASR:
+    # 中文语音识别模型，可以运行在低性能设备（需手动下载模型，例如RK3566-2g）
+    # 详细配置说明请参考：docs/sherpa-paraformer-guide.md
+    type: sherpa_onnx_local
+    model_dir: models/sherpa-onnx-paraformer-zh-small-2024-03-09
+    output_dir: tmp/
+    model_type: paraformer
   DoubaoASR:
     # 可以在这里申请相关Key等信息
     # https://console.volcengine.com/speech/app
@@ -298,15 +327,39 @@ ASR:
     output_dir: tmp/
   AliyunASR:
     # 阿里云智能语音交互服务，需要先在阿里云平台开通服务，然后获取验证信息
+    # HTTP POST请求，一次性处理完整音频
     # 平台地址：https://nls-portal.console.aliyun.com/
     # appkey地址：https://nls-portal.console.aliyun.com/applist
     # token地址：https://nls-portal.console.aliyun.com/overview
+    # AliyunASR和AliyunStreamASR的区别是：AliyunASR是批量处理场景，AliyunStreamASR是实时交互场景
+    # 一般来说非流式ASR更便宜（0.004元/秒，¥0.24/分钟）
+    # 但是AliyunStreamASR实时性更好（0.005元/秒，¥0.3/分钟）
     # 定义ASR API类型
     type: aliyun
     appkey: 你的阿里云智能语音交互服务项目Appkey
     token: 你的阿里云智能语音交互服务AccessToken，临时的24小时，要长期用下方的access_key_id，access_key_secret
     access_key_id: 你的阿里云账号access_key_id
     access_key_secret: 你的阿里云账号access_key_secret
+    output_dir: tmp/
+  AliyunStreamASR:
+    # 阿里云智能语音交互服务 - 实时流式语音识别
+    # WebSocket连接，实时处理音频流
+    # 平台地址：https://nls-portal.console.aliyun.com/
+    # appkey地址：https://nls-portal.console.aliyun.com/applist
+    # token地址：https://nls-portal.console.aliyun.com/overview
+    # AliyunASR和AliyunStreamASR的区别是：AliyunASR是批量处理场景，AliyunStreamASR是实时交互场景
+    # 一般来说非流式ASR更便宜（0.004元/秒，¥0.24/分钟）
+    # 但是AliyunStreamASR实时性更好（0.005元/秒，¥0.3/分钟）
+    # 定义ASR API类型
+    type: aliyun_stream
+    appkey: 你的阿里云智能语音交互服务项目Appkey
+    token: 你的阿里云智能语音交互服务AccessToken，临时的24小时，要长期用下方的access_key_id，access_key_secret
+    access_key_id: 你的阿里云账号access_key_id
+    access_key_secret: 你的阿里云账号access_key_secret
+    # 服务器地域选择，可选择距离更近的服务器以减少延迟，如nls-gateway-cn-hangzhou.aliyuncs.com(杭州)等
+    host: nls-gateway-cn-shanghai.aliyuncs.com
+    # 断句检测时间(毫秒)，控制静音多长时间后进行断句，默认800毫秒
+    max_sentence_silence: 800
     output_dir: tmp/
   BaiduASR:
     # 获取AppID、API Key、Secret Key：https://console.bce.baidu.com/ai-engine/old/#/ai/speech/app/list
@@ -318,11 +371,69 @@ ASR:
     # 语言参数，1537为普通话，具体参考：https://ai.baidu.com/ai-doc/SPEECH/0lbxfnc9b
     dev_pid: 1537
     output_dir: tmp/
+  OpenaiASR:
+    # OpenAI语音识别服务，需要先在OpenAI平台创建组织并获取api_key
+    # 支持中、英、日、韩等多种语音识别，具体参考文档https://platform.openai.com/docs/guides/speech-to-text
+    # 需要网络连接
+    # 申请步骤：
+    # 1.登录OpenAI Platform。https://auth.openai.com/log-in
+    # 2.创建api-key  https://platform.openai.com/settings/organization/api-keys
+    # 3.模型可以选择gpt-4o-transcribe或GPT-4o mini Transcribe
+    type: openai
+    api_key: 你的OpenAI API密钥
+    base_url: https://api.openai.com/v1/audio/transcriptions
+    model_name: gpt-4o-mini-transcribe
+    output_dir: tmp/
+  GroqASR:
+    # Groq语音识别服务，需要先在Groq Console创建API密钥
+    # 申请步骤：
+    # 1.登录groq Console。https://console.groq.com/home
+    # 2.创建api-key  https://console.groq.com/keys
+    # 3.模型可以选择whisper-large-v3-turbo或whisper-large-v3（distil-whisper-large-v3-en仅支持英语转录）
+    type: openai
+    api_key: 你的Groq API密钥
+    base_url: https://api.groq.com/openai/v1/audio/transcriptions
+    model_name: whisper-large-v3-turbo
+    output_dir: tmp/
+  VoskASR:
+    # 官方网站：https://alphacephei.com/vosk/
+    # 配置说明：
+    # 1. VOSK是一个离线语音识别库，支持多种语言
+    # 2. 需要先下载模型文件：https://alphacephei.com/vosk/models
+    # 3. 中文模型推荐使用vosk-model-small-cn-0.22或vosk-model-cn-0.22
+    # 4. 完全离线运行，无需网络连接
+    # 5. 输出文件保存在tmp/目录
+    # 使用步骤：
+    # 1. 访问 https://alphacephei.com/vosk/models 下载对应的模型
+    # 2. 解压模型文件到项目目录下的models/vosk/文件夹
+    # 3. 在配置中指定正确的模型路径
+    # 4. 注意：VOSK中文模型输出不带标点符号，词与词之间会有空格
+    type: vosk
+    model_path: 你的模型路径，如：models/vosk/vosk-model-small-cn-0.22
+    output_dir: tmp/
+  Qwen3ASRFlash:
+    # 通义千问Qwen3-ASR-Flash语音识别服务，需要先在阿里云百炼平台创建API密钥
+    # 申请步骤：
+    # 1.登录阿里云百炼平台。https://bailian.console.aliyun.com/
+    # 2.创建API-KEY  https://bailian.console.aliyun.com/#/api-key
+    # 3.Qwen3-ASR-Flash基于通义千问多模态基座，支持多语言识别、歌唱识别、噪声拒识等功能
+    type: qwen3_asr_flash
+    api_key: 你的阿里云百炼API密钥
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    model_name: qwen3-asr-flash
+    output_dir: tmp/
+    # ASR选项配置
+    enable_lid: true  # 自动语种检测
+    enable_itn: true  # 逆文本归一化
+    #language: "zh"  # 语种，支持zh、en、ja、ko等
+    context: ""  # 上下文信息，用于提高识别准确率，不超过10000 Token
 
+  
 VAD:
   SileroVAD:
     type: silero
     threshold: 0.5
+    threshold_low: 0.3
     model_dir: models/snakers4_silero-vad
     min_silence_duration_ms: 200  # 如果说话停顿比较长，可以把这个值设置大一些
 
@@ -512,6 +623,9 @@ TTS:
     access_token: 你的火山引擎语音合成服务access_token
     resource_id: volc.service_type.10029
     speaker: zh_female_wanwanxiaohe_moon_bigtts
+    speech_rate: 0
+    loudness_rate: 0
+    pitch: 0
   CosyVoiceSiliconflow:
     type: siliconflow
     # 硅基流动TTS
@@ -608,19 +722,13 @@ TTS:
     inp_refs: []
     sample_steps: 32
     if_sr: false
-  MinimaxTTS:
-    # Minimax语音合成服务，需要先在minimax平台创建账户充值，并获取登录信息
-    # 平台地址：https://platform.minimaxi.com/
-    # 充值地址：https://platform.minimaxi.com/user-center/payment/balance
-    # group_id地址：https://platform.minimaxi.com/user-center/basic-information
-    # api_key地址：https://platform.minimaxi.com/user-center/basic-information/interface-key
-    # 定义TTS API类型
-    type: minimax
+  MinimaxTTSHTTPStream:
+  # Minimax流式语音合成服务
+    type: minimax_httpstream
     output_dir: tmp/
     group_id: 你的minimax平台groupID
     api_key: 你的minimax平台接口密钥
     model: "speech-01-turbo"
-    # 此处设置将优先于voice_setting中voice_id的设置；如都不设置，默认为 female-shaonv
     voice_id: "female-shaonv"
     # 以下可不用设置，使用默认设置
     # voice_setting:
@@ -634,7 +742,7 @@ TTS:
     #       - "处理/(chu3)(li3)"
     #       - "危险/dangerous"
     # audio_setting:
-    #     sample_rate: 32000
+    #     sample_rate: 24000
     #     bitrate: 128000
     #     format: "mp3"
     #     channel: 1
@@ -666,8 +774,30 @@ TTS:
     # volume: 50
     # speech_rate: 0
     # pitch_rate: 0
-    # 添加 302.ai TTS 配置
-    # token申请地址：https://dash.302.ai/
+  AliyunStreamTTS:
+    # 阿里云CosyVoice大模型流式文本语音合成
+    # 采用FlowingSpeechSynthesizer接口，支持更低延迟和更自然的语音质量
+    # 流式文本语音合成仅提供商用版，不支持试用，详情请参见试用版和商用版。要使用该功能，请开通商用版。
+    # 支持龙系列专用音色：longxiaochun、longyu、longchen等
+    # 平台地址：https://nls-portal.console.aliyun.com/
+    # appkey地址：https://nls-portal.console.aliyun.com/applist
+    # token地址：https://nls-portal.console.aliyun.com/overview
+    # 使用三阶段流式交互：StartSynthesis -> RunSynthesis -> StopSynthesis
+    type: aliyun_stream
+    output_dir: tmp/
+    appkey: 你的阿里云智能语音交互服务项目Appkey
+    token: 你的阿里云智能语音交互服务AccessToken，临时的24小时，要长期用下方的access_key_id，access_key_secret
+    voice: longxiaochun 
+    access_key_id: 你的阿里云账号access_key_id
+    access_key_secret: 你的阿里云账号access_key_secret
+    # 截至2025年7月21日大模型音色只有北京节点采用，其他节点暂不支持
+    host: nls-gateway-cn-beijing.aliyuncs.com
+    # 以下可不用设置，使用默认设置
+    # format: pcm  # 音频格式：pcm、wav、mp3
+    # sample_rate: 16000  # 采样率：8000、16000、24000
+    # volume: 50  # 音量：0-100
+    # speech_rate: 0  # 语速：-500到500
+    # pitch_rate: 0  # 语调：-500到500
   TencentTTS:
     # 腾讯云智能语音交互服务，需要先在腾讯云平台开通服务
     # appid、secret_id、secret_key申请地址：https://console.cloud.tencent.com/cam/capi
@@ -682,6 +812,8 @@ TTS:
 
   TTS302AI:
     # 302AI语音合成服务，需要先在302平台创建账户充值，并获取密钥信息
+    # 添加 302.ai TTS 配置
+    # token申请地址：https://dash.302.ai/
     # 获取api_keyn路径：https://dash.302.ai/apis/list
     # 价格，$35/百万字符。火山原版¥450元/百万字符
     type: doubao
@@ -767,3 +899,41 @@ TTS:
     access_token: "U4YdYXVfpwWnk2t5Gp822zWPCuORyeJL"
     voice: "OUeAo1mhq6IBExi"
     output_dir: tmp/
+  PaddleSpeechTTS:
+    #百度飞浆 PaddleSpeech 支持本地离线部署 支持模型训练
+    #框架地址 https://www.paddlepaddle.org.cn/
+    #项目地址 https://github.com/PaddlePaddle/PaddleSpeech
+    #SpeechServerDemo https://github.com/PaddlePaddle/PaddleSpeech/tree/develop/demos/speech_server
+    #流式传输请参考 https://github.com/PaddlePaddle/PaddleSpeech/wiki/PaddleSpeech-Server-WebSocket-API
+    type: paddle_speech
+    protocol: websocket # protocol choices = ['websocket', 'http']
+    url: ws://127.0.0.1:8092/paddlespeech/tts/streaming  # TTS 服务的 URL 地址，指向本地服务器 [websocket默认ws://127.0.0.1:8092/paddlespeech/tts/streaming，http默认http://127.0.0.1:8090/paddlespeech/tts]
+    spk_id: 0  # 发音人 ID，0 通常表示默认的发音人
+    sample_rate: 24000  # 采样率 [websocket默认24000，http默认0 自动选择]
+    speed: 1.0  # 语速，1.0 表示正常语速，>1 表示加快，<1 表示减慢
+    volume: 1.0  # 音量，1.0 表示正常音量，>1 表示增大，<1 表示减小
+    save_path:   # 保存路径
+  IndexStreamTTS:
+    # 基于Index-TTS-vLLM项目的TTS接口服务
+    # 参照教程：https://github.com/Ksuriuri/index-tts-vllm/blob/master/README.md
+    type: index_stream
+    api_url: http://127.0.0.1:11996/tts
+    audio_format: "pcm"
+    # 默认音色，如需其他音色可到项目assets文件夹下注册
+    voice: "jay_klee"
+    output_dir: tmp/
+  AliBLTTS:
+    # 阿里百炼CosyVoice大模型流式文本语音合成
+    # 可在这里找到你的 api_key https://bailian.console.aliyun.com/?apiKey=1#/api-key
+    # cosyvoice-v3和部分音色需要申请开通
+    type: alibl_stream
+    api_key: 你的api_key
+    model: "cosyvoice-v2"
+    voice: "longcheng_v2"
+    output_dir: tmp/
+    # 以下可不用设置，使用默认设置
+    # format: pcm  # 音频格式：pcm、wav、mp3、opus
+    # sample_rate: 24000  # 采样率：16000, 24000, 48000
+    # volume: 50  # 音量：0-100
+    # rate: 1  # 语速：0.5~2
+    # pitch: 1  # 语调：0.5~2

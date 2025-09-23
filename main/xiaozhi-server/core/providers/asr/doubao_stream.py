@@ -56,6 +56,16 @@ class ASRProvider(ASRProviderBase):
     async def receive_audio(self, conn, audio, audio_have_voice):
         conn.asr_audio.append(audio)
         conn.asr_audio = conn.asr_audio[-10:]
+        
+        # 存储音频数据
+        if not hasattr(conn, 'asr_audio_for_voiceprint'):
+            conn.asr_audio_for_voiceprint = []
+        conn.asr_audio_for_voiceprint.append(audio)
+        
+        # 当没有音频数据时处理完整语音片段
+        if not audio and len(conn.asr_audio_for_voiceprint) > 0:
+            await self.handle_voice_stop(conn, conn.asr_audio_for_voiceprint)
+            conn.asr_audio_for_voiceprint = []
 
         # 如果本次有声音，且之前没有建立连接
         if audio_have_voice and self.asr_ws is None and not self.is_processing:
@@ -93,9 +103,7 @@ class ASRProvider(ASRProviderBase):
 
                     # 检查初始化响应
                     if "code" in result and result["code"] != 1000:
-                        error_msg = f"ASR服务初始化失败: {result.get('payload_msg', {}).get('message', '未知错误')}"
-                        if "payload_msg" in result:
-                            error_msg += f"\n详细错误信息: {json.dumps(result['payload_msg'], ensure_ascii=False)}"
+                        error_msg = f"ASR服务初始化失败: {result.get('payload_msg', {}).get('error', '未知错误')}"
                         logger.bind(tag=TAG).error(error_msg)
                         raise Exception(error_msg)
 
@@ -150,6 +158,8 @@ class ASRProvider(ASRProviderBase):
     async def _forward_asr_results(self, conn):
         try:
             while self.asr_ws and not conn.stop_event.is_set():
+                # 获取当前连接的音频数据
+                audio_data = getattr(conn, 'asr_audio_for_voiceprint', [])
                 try:
                     response = await self.asr_ws.recv()
                     result = self.parse_response(response)
@@ -173,7 +183,8 @@ class ASRProvider(ASRProviderBase):
                                 logger.bind(tag=TAG).error(f"识别文本：空")
                                 self.text = ""
                                 conn.reset_vad_states()
-                                await self.handle_voice_stop(conn, None)
+                                if len(audio_data) > 15:  # 确保有足够音频数据
+                                    await self.handle_voice_stop(conn, audio_data)
                                 break
 
                             for utterance in utterances:
@@ -183,7 +194,8 @@ class ASRProvider(ASRProviderBase):
                                         f"识别到文本: {self.text}"
                                     )
                                     conn.reset_vad_states()
-                                    await self.handle_voice_stop(conn, None)
+                                    if len(audio_data) > 15:  # 确保有足够音频数据
+                                        await self.handle_voice_stop(conn, audio_data)
                                     break
                         elif "error" in payload:
                             error_msg = payload.get("error", "未知错误")
@@ -210,6 +222,13 @@ class ASRProvider(ASRProviderBase):
                 await self.asr_ws.close()
                 self.asr_ws = None
             self.is_processing = False
+            if conn:
+                if hasattr(conn, 'asr_audio_for_voiceprint'):
+                    conn.asr_audio_for_voiceprint = []
+                if hasattr(conn, 'asr_audio'):
+                    conn.asr_audio = []
+                if hasattr(conn, 'has_valid_voice'):
+                    conn.has_valid_voice = False
 
     def stop_ws_connection(self):
         if self.asr_ws:
@@ -256,7 +275,6 @@ class ASRProvider(ASRProviderBase):
             "X-Api-Access-Key": self.access_token,
             "X-Api-Resource-Id": "volc.bigasr.sauc.duration",
             "X-Api-Connect-Id": str(uuid.uuid4()),
-            "Host": "openspeech.bytedance.com",
         }
 
     def generate_header(
@@ -309,9 +327,14 @@ class ASRProvider(ASRProviderBase):
 
             # 如果是错误响应
             if message_type == 0x0F:  # SERVER_ERROR_RESPONSE
-                code = int.from_bytes(header[4:8], "big", signed=False)
-                error_msg = res[8:].decode("utf-8")
-                return {"code": code, "error": error_msg}
+                code = int.from_bytes(res[4:8], "big", signed=False)
+                msg_length = int.from_bytes(res[8:12], "big", signed=False)
+                error_msg = json.loads(res[12:].decode("utf-8"))
+                return {
+                    "code": code,
+                    "msg_length": msg_length,
+                    "payload_msg": error_msg,
+                }
 
             # 获取JSON数据（跳过12字节头部）
             try:
@@ -347,3 +370,12 @@ class ASRProvider(ASRProviderBase):
                 pass
             self.forward_task = None
         self.is_processing = False
+        # 清理所有连接的音频缓冲区
+        if hasattr(self, '_connections'):
+            for conn in self._connections.values():
+                if hasattr(conn, 'asr_audio_for_voiceprint'):
+                    conn.asr_audio_for_voiceprint = []
+                if hasattr(conn, 'asr_audio'):
+                    conn.asr_audio = []
+                if hasattr(conn, 'has_valid_voice'):
+                    conn.has_valid_voice = False

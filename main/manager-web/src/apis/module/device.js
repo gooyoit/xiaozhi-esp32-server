@@ -51,10 +51,11 @@ export default {
                 });
             }).send();
     },
-    enableOtaUpgrade(id, status, callback) {
+    updateDeviceInfo(id, payload, callback) {
         RequestService.sendRequest()
-            .url(`${getServiceUrl()}/device/enableOta/${id}/${status}`)
+            .url(`${getServiceUrl()}/device/update/${id}`)
             .method('PUT')
+            .data(payload)
             .success((res) => {
                 RequestService.clearRequestTime()
                 callback(res)
@@ -63,8 +64,59 @@ export default {
                 console.error('更新OTA状态失败:', err)
                 this.$message.error(err.msg || '更新OTA状态失败')
                 RequestService.reAjaxFun(() => {
-                    this.enableOtaUpgrade(id, status, callback)
+                    this.updateDeviceInfo(id, payload, callback)
                 })
             }).send()
+    },
+    // 手动添加设备
+    manualAddDevice(params, callback) {
+        RequestService.sendRequest()
+            .url(`${getServiceUrl()}/device/manual-add`)
+            .method('POST')
+            .data(params)
+            .success((res) => {
+                RequestService.clearRequestTime();
+                callback(res);
+            })
+            .networkFail((err) => {
+                console.error('手动添加设备失败:', err);
+                RequestService.reAjaxFun(() => {
+                    this.manualAddDevice(params, callback);
+                });
+            }).send();
+    },
+    // 获取设备状态
+    getDeviceStatus(agentId, callback) {
+        RequestService.sendRequest()
+            .url(`${getServiceUrl()}/device/bind/${agentId}`)
+            .method('POST')
+            .data({}) // 发送空对象作为请求体
+            .success((res) => {
+                RequestService.clearRequestTime();
+                callback(res);
+            })
+            .networkFail((err) => {
+                console.error('获取设备状态失败:', err);
+                RequestService.reAjaxFun(() => {
+                    this.getDeviceStatus(agentId, callback);
+                });
+            }).send();
+    },
+    // 发送设备指令
+    sendDeviceCommand(deviceId, mcpData, callback) {
+        RequestService.sendRequest()
+            .url(`${getServiceUrl()}/device/commands/${deviceId}`)
+            .method('POST')
+            .data(mcpData)
+            .success((res) => {
+                RequestService.clearRequestTime();
+                callback(res);
+            })
+            .networkFail((err) => {
+                console.error('发送设备指令失败:', err);
+                RequestService.reAjaxFun(() => {
+                    this.sendDeviceCommand(deviceId, mcpData, callback);
+                });
+            }).send();
     },
 }

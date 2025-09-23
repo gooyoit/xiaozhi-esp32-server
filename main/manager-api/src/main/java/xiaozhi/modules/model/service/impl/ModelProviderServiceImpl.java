@@ -1,5 +1,6 @@
 package xiaozhi.modules.model.service.impl;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -8,12 +9,14 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import cn.hutool.json.JSONArray;
 import lombok.AllArgsConstructor;
 import xiaozhi.common.constant.Constant;
+import xiaozhi.common.exception.ErrorCode;
 import xiaozhi.common.exception.RenException;
 import xiaozhi.common.page.PageData;
 import xiaozhi.common.service.impl.BaseServiceImpl;
@@ -31,6 +34,29 @@ public class ModelProviderServiceImpl extends BaseServiceImpl<ModelProviderDao, 
         implements ModelProviderService {
 
     private final ModelProviderDao modelProviderDao;
+
+    @Override
+    public List<ModelProviderDTO> getPluginList() {
+        LambdaQueryWrapper<ModelProviderEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ModelProviderEntity::getModelType, "Plugin");
+        List<ModelProviderEntity> providerEntities = modelProviderDao.selectList(queryWrapper);
+        return ConvertUtils.sourceToTarget(providerEntities, ModelProviderDTO.class);
+    }
+
+    @Override
+    public ModelProviderDTO getById(String id) {
+        ModelProviderEntity entity = modelProviderDao.selectById(id);
+        return ConvertUtils.sourceToTarget(entity, ModelProviderDTO.class);
+    }
+
+    @Override
+    public List<ModelProviderDTO> getPluginListByIds(Collection<String> ids) {
+        LambdaQueryWrapper<ModelProviderEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(ModelProviderEntity::getId, ids);
+        queryWrapper.eq(ModelProviderEntity::getModelType, "Plugin");
+        List<ModelProviderEntity> providerEntities = modelProviderDao.selectList(queryWrapper);
+        return ConvertUtils.sourceToTarget(providerEntities, ModelProviderDTO.class);
+    }
 
     @Override
     public List<ModelProviderDTO> getListByModelType(String modelType) {
@@ -84,7 +110,7 @@ public class ModelProviderServiceImpl extends BaseServiceImpl<ModelProviderDao, 
         modelProviderDTO.setFields(modelProviderDTO.getFields());
         ModelProviderEntity entity = ConvertUtils.sourceToTarget(modelProviderDTO, ModelProviderEntity.class);
         if (modelProviderDao.insert(entity) == 0) {
-            throw new RenException("新增数据失败");
+            throw new RenException(ErrorCode.ADD_DATA_FAILED);
         }
 
         return ConvertUtils.sourceToTarget(modelProviderDTO, ModelProviderDTO.class);
@@ -97,7 +123,7 @@ public class ModelProviderServiceImpl extends BaseServiceImpl<ModelProviderDao, 
         modelProviderDTO.setUpdateDate(new Date());
         if (modelProviderDao
                 .updateById(ConvertUtils.sourceToTarget(modelProviderDTO, ModelProviderEntity.class)) == 0) {
-            throw new RenException("修改数据失败");
+            throw new RenException(ErrorCode.UPDATE_DATA_FAILED);
         }
         return ConvertUtils.sourceToTarget(modelProviderDTO, ModelProviderDTO.class);
     }
@@ -105,14 +131,14 @@ public class ModelProviderServiceImpl extends BaseServiceImpl<ModelProviderDao, 
     @Override
     public void delete(String id) {
         if (modelProviderDao.deleteById(id) == 0) {
-            throw new RenException("删除数据失败");
+            throw new RenException(ErrorCode.DELETE_DATA_FAILED);
         }
     }
 
     @Override
     public void delete(List<String> ids) {
         if (modelProviderDao.deleteBatchIds(ids) == 0) {
-            throw new RenException("删除数据失败");
+            throw new RenException(ErrorCode.DELETE_DATA_FAILED);
         }
     }
 

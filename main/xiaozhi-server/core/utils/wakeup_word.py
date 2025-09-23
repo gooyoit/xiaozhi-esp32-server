@@ -1,10 +1,10 @@
 import os
+import re
 import yaml
 import time
 import hashlib
-import fcntl
+import portalocker
 from typing import Dict
-from contextlib import contextmanager
 
 
 class FileLock:
@@ -17,15 +17,15 @@ class FileLock:
         self.start_time = time.time()
         while True:
             try:
-                fcntl.flock(self.file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                portalocker.lock(self.file, portalocker.LOCK_EX | portalocker.LOCK_NB)
                 return self.file
-            except IOError:
+            except portalocker.LockException:
                 if time.time() - self.start_time > self.timeout:
                     raise TimeoutError("获取文件锁超时")
                 time.sleep(0.1)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        fcntl.flock(self.file, fcntl.LOCK_UN)
+        portalocker.unlock(self.file)
 
 
 class WakeupWordsConfig:
@@ -55,7 +55,7 @@ class WakeupWordsConfig:
             return self._config_cache
 
         try:
-            with open(self.config_file, "a+") as f:
+            with open(self.config_file, "a+", encoding="utf-8") as f:
                 with FileLock(f, timeout=self._lock_timeout):
                     f.seek(0)
                     content = f.read()
@@ -73,7 +73,7 @@ class WakeupWordsConfig:
     def _save_config(self, config: Dict):
         """保存配置到文件，使用文件锁保护"""
         try:
-            with open(self.config_file, "w") as f:
+            with open(self.config_file, "w", encoding="utf-8") as f:
                 with FileLock(f, timeout=self._lock_timeout):
                     yaml.dump(config, f, allow_unicode=True)
                     self._config_cache = config
@@ -89,33 +89,30 @@ class WakeupWordsConfig:
         voice = hashlib.md5(voice.encode()).hexdigest()
         """获取唤醒词回复配置"""
         config = self._load_config()
-        default_response = {
-            "voice": "default",
-            "file_path": "config/assets/wakeup_words.wav",
-            "time": 0,
-            "text": "哈啰啊，我是小智啦，声音好听的台湾女孩一枚，超开心认识你耶，最近在忙啥，别忘了给我来点有趣的料哦，我超爱听八卦的啦",
-        }
 
         if not config or voice not in config:
-            return default_response
+            return None
 
         # 检查文件大小
         file_path = config[voice]["file_path"]
         if not os.path.exists(file_path) or os.stat(file_path).st_size < (15 * 1024):
-            return default_response
+            return None
 
         return config[voice]
 
     def update_wakeup_response(self, voice: str, file_path: str, text: str):
         """更新唤醒词回复配置"""
         try:
+            # 过滤表情符号
+            filtered_text = re.sub(r'[\U0001F600-\U0001F64F\U0001F900-\U0001F9FF]', '', text)
+            
             config = self._load_config()
             voice_hash = hashlib.md5(voice.encode()).hexdigest()
             config[voice_hash] = {
                 "voice": voice,
                 "file_path": file_path,
                 "time": time.time(),
-                "text": text,
+                "text": filtered_text,
             }
             self._save_config(config)
         except Exception as e:
