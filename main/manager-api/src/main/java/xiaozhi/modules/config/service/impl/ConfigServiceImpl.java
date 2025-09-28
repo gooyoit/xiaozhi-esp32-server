@@ -70,7 +70,7 @@ public class ConfigServiceImpl implements ConfigService {
         // 查询默认智能体
         AgentTemplateEntity agent = agentTemplateService.getDefaultTemplate();
         if (agent == null) {
-            throw new RenException(ErrorCode.DEFAULT_AGENT_NOT_FOUND);
+            throw new RenException("默认智能体未找到");
         }
 
         // 构建模块配置
@@ -113,7 +113,7 @@ public class ConfigServiceImpl implements ConfigService {
         // 获取智能体信息
         AgentEntity agent = agentService.getAgentById(device.getAgentId());
         if (agent == null) {
-            throw new RenException(ErrorCode.AGENT_NOT_FOUND);
+            throw new RenException("智能体未找到");
         }
         // 获取音色信息
         String voice = null;
@@ -350,7 +350,7 @@ public class ConfigServiceImpl implements ConfigService {
      * @param result         结果Map
      */
     private void buildModuleConfig(
-            String assistantName,
+            String assistantName, 
             String prompt,
             String summaryMemory,
             String voice,
@@ -366,17 +366,18 @@ public class ConfigServiceImpl implements ConfigService {
             Map<String, Object> result,
             boolean isCache) {
         Map<String, String> selectedModule = new HashMap<>();
-
+    
         String[] modelTypes = { "VAD", "ASR", "TTS", "Memory", "Intent", "LLM", "VLLM" };
         String[] modelIds = { vadModelId, asrModelId, ttsModelId, memModelId, intentModelId, llmModelId, vllmModelId };
         String intentLLMModelId = null;
         String memLocalShortLLMModelId = null;
-
+    
         for (int i = 0; i < modelIds.length; i++) {
             if (modelIds[i] == null) {
                 continue;
             }
-            ModelConfigEntity model = modelConfigService.getModelById(modelIds[i], isCache);
+            // 关键：第三个参数传false，确保获取原始密钥
+            ModelConfigEntity model = modelConfigService.getModelById(modelIds[i], isCache, false);
             if (model == null) {
                 continue;
             }
@@ -424,14 +425,16 @@ public class ConfigServiceImpl implements ConfigService {
                 if ("LLM".equals(modelTypes[i])) {
                     if (StringUtils.isNotBlank(intentLLMModelId)) {
                         if (!typeConfig.containsKey(intentLLMModelId)) {
-                            ModelConfigEntity intentLLM = modelConfigService.getModelById(intentLLMModelId, isCache);
+                            // 修改这里：添加isMaskSensitive=false参数
+                            ModelConfigEntity intentLLM = modelConfigService.getModelById(intentLLMModelId, isCache, false);
                             typeConfig.put(intentLLM.getId(), intentLLM.getConfigJson());
                         }
                     }
                     if (StringUtils.isNotBlank(memLocalShortLLMModelId)) {
                         if (!typeConfig.containsKey(memLocalShortLLMModelId)) {
+                            // 修改这里：添加isMaskSensitive=false参数
                             ModelConfigEntity memLocalShortLLM = modelConfigService
-                                    .getModelById(memLocalShortLLMModelId, isCache);
+                                    .getModelById(memLocalShortLLMModelId, isCache, false);
                             typeConfig.put(memLocalShortLLM.getId(), memLocalShortLLM.getConfigJson());
                         }
                     }

@@ -35,11 +35,11 @@
           <span class="nav-text">{{ $t('header.otaManagement') }}</span>
         </div>
         <el-dropdown v-if="isSuperAdmin" trigger="click" class="equipment-management more-dropdown"
-          :class="{ 'active-tab': $route.path === '/dict-management' || $route.path === '/params-management' || $route.path === '/provider-management' || $route.path === '/server-side-management' }"
+          :class="{ 'active-tab': $route.path === '/dict-management' || $route.path === '/params-management' || $route.path === '/provider-management' || $route.path === '/server-side-management' || $route.path === '/agent-template-management' }"
           @visible-change="handleParamDropdownVisibleChange">
           <span class="el-dropdown-link">
             <img loading="lazy" alt="" src="@/assets/header/param_management.png"
-              :style="{ filter: $route.path === '/dict-management' || $route.path === '/params-management' || $route.path === '/provider-management' || $route.path === '/server-side-management' ? 'brightness(0) invert(1)' : 'None' }" />
+              :style="{ filter: $route.path === '/dict-management' || $route.path === '/params-management' || $route.path === '/provider-management' || $route.path === '/server-side-management' || $route.path === '/agent-template-management' ? 'brightness(0) invert(1)' : 'None' }" />
             <span class="nav-text">{{ $t('header.paramDictionary') }}</span>
             <i class="el-icon-arrow-down el-icon--right" :class="{ 'rotate-down': paramDropdownVisible }"></i>
           </span>
@@ -52,6 +52,9 @@
             </el-dropdown-item>
             <el-dropdown-item @click.native="goProviderManagement">
               {{ $t('header.providerManagement') }}
+            </el-dropdown-item>
+            <el-dropdown-item @click.native="goAgentTemplateManagement">
+              {{ $t('header.agentTemplate') }}
             </el-dropdown-item>
             <el-dropdown-item @click.native="goServerSideManagement">
               {{ $t('header.serverSideManagement') }}
@@ -192,6 +195,10 @@ export default {
     },
     goServerSideManagement() {
       this.$router.push('/server-side-management')
+    },
+    // 添加默认角色模板管理导航方法
+    goAgentTemplateManagement() {
+      this.$router.push('/agent-template-management')
     },
     // 获取用户信息
     fetchUserInfo() {

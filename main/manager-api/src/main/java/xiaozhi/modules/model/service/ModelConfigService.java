@@ -35,17 +35,27 @@ public interface ModelConfigService extends BaseService<ModelConfigEntity> {
     /**
      * 根据ID获取模型配置
      * 
-     * @param id      模型ID
-     * @param isCache 是否缓存
+     * @param id          模型ID
+     * @param isCache     是否缓存
+     * @param isMaskSensitive 是否掩码敏感信息
+     * @return 模型配置实体
+     */
+    ModelConfigEntity getModelById(String id, boolean isCache, boolean isMaskSensitive);
+
+    /**
+     * 根据ID获取模型配置（默认掩码敏感信息）
+     * 
+     * @param id          模型ID
+     * @param isCache     是否缓存
      * @return 模型配置实体
      */
     ModelConfigEntity getModelById(String id, boolean isCache);
-
+    
     /**
      * 设置默认模型
      * 
-     * @param modelType 模型类型
-     * @param isDefault 是否默认
+     * @param modelType   模型类型
+     * @param isDefault   是否默认（1:是，0:否）
      */
     void setDefaultModel(String modelType, int isDefault);
 }

@@ -164,4 +164,6 @@ public interface ErrorCode {
     
     // 字典相关错误码
     int DICT_LABEL_DUPLICATE = 10128; // 字典标签重复
+    // 模型相关错误码
+    int MODEL_TYPE_PROVIDE_CODE_NOT_NULL = 10129; // modelType和provideCode不能为空
 }
