@@ -161,9 +161,18 @@ public interface ErrorCode {
     int MQTT_SECRET_LENGTH_INSECURE = 10123; // mqtt密钥长度不安全
     int MQTT_SECRET_CHARACTER_INSECURE = 10124; // mqtt密钥必须同时包含大小写字母
     int MQTT_SECRET_WEAK_PASSWORD = 10125; // mqtt密钥包含弱密码
-    
-    // 字典相关错误码
     int DICT_LABEL_DUPLICATE = 10128; // 字典标签重复
-    // 模型相关错误码
-    int MODEL_TYPE_PROVIDE_CODE_NOT_NULL = 10129; // modelType和provideCode不能为空
+    int SM2_KEY_NOT_CONFIGURED = 10129; // SM2密钥未配置
+    int SM2_DECRYPT_ERROR = 10130; // SM2解密失败
+    int MODEL_TYPE_PROVIDE_CODE_NOT_NULL = 10131; // modelType和provideCode不能为空
+
+    // 聊天记录相关错误码
+    int CHAT_HISTORY_NO_PERMISSION = 10132; // 没有权限查看该智能体的聊天记录
+    int CHAT_HISTORY_SESSION_ID_NOT_NULL = 10133; // 会话ID不能为空
+    int CHAT_HISTORY_AGENT_ID_NOT_NULL = 10134; // 智能体ID不能为空
+    int CHAT_HISTORY_DOWNLOAD_FAILED = 10135; // 聊天记录下载失败
+    int DOWNLOAD_LINK_EXPIRED = 10136; // 下载链接已过期或无效
+    int DOWNLOAD_LINK_INVALID = 10137; // 下载链接无效
+    int CHAT_ROLE_USER = 10138; // 用户角色
+    int CHAT_ROLE_AGENT = 10139; // 智能体角色
 }

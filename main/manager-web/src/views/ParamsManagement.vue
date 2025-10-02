@@ -30,8 +30,9 @@
                                 show-overflow-tooltip>
                                 <template slot-scope="scope">
                                     <div v-if="isSensitiveParam(scope.row.paramCode)">
-                                        <span v-if="!scope.row.showValue">{{ maskSensitiveValue(scope.row.paramValue)
-                                        }}</span>
+                                        <span v-if="!scope.row.showValue">
+                                            {{ maskSensitiveValue(scope.row.paramValue) }}
+                                        </span>
                                         <span v-else>{{ scope.row.paramValue }}</span>
                                         <el-button size="mini" type="text" @click="toggleSensitiveValue(scope.row)">
                                             {{ scope.row.showValue ? $t('paramManagement.hide') :
@@ -120,7 +121,7 @@ export default {
             dialogVisible: false,
             dialogTitle: "新增参数",
             isAllSelected: false,
-            sensitive_keys: ["api_key", "personal_access_token", "access_token", "token", "secret", "access_key_secret", "secret_key"],
+            sensitive_keys: ["api_key", "personal_access_token", "access_token", "token", "secret", "access_key_secret", "secret_key", "password", "mqtt_signature_key", "private_key"],
             paramForm: {
                 id: null,
                 paramCode: "",

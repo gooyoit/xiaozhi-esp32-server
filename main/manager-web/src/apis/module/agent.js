@@ -1,5 +1,5 @@
-import RequestService from '../httpRequest';
 import { getServiceUrl } from '../api';
+import RequestService from '../httpRequest';
 
 
 export default {
@@ -97,7 +97,7 @@ export default {
                 });
             }).send();
     },
-   
+
     // 新增：获取智能体模板分页列表
     getAgentTemplatesPage(params, callback) {
         RequestService.sendRequest()
@@ -208,7 +208,7 @@ export default {
             }).send();
     },
     // 获取指定智能体声纹列表
-    getAgentVoicePrintList(id,callback) {
+    getAgentVoicePrintList(id, callback) {
         RequestService.sendRequest()
             .url(`${getServiceUrl()}/agent/voice-print/list/${id}`)
             .method('GET')
@@ -218,7 +218,7 @@ export default {
             })
             .networkFail(() => {
                 RequestService.reAjaxFun(() => {
-                    this.getAgentVoicePrintList(id,callback);
+                    this.getAgentVoicePrintList(id, callback);
                 });
             }).send();
     },
@@ -254,7 +254,7 @@ export default {
             }).send();
     },
     // 获取指定智能体用户类型聊天记录
-    getRecentlyFiftyByAgentId(id,callback) {
+    getRecentlyFiftyByAgentId(id, callback) {
         RequestService.sendRequest()
             .url(`${getServiceUrl()}/agent/${id}/chat-history/user`)
             .method('GET')
@@ -264,12 +264,12 @@ export default {
             })
             .networkFail(() => {
                 RequestService.reAjaxFun(() => {
-                    this.getRecentlyFiftyByAgentId(id,callback);
+                    this.getRecentlyFiftyByAgentId(id, callback);
                 });
             }).send();
     },
     // 获取指定智能体用户类型聊天记录
-    getContentByAudioId(id,callback) {
+    getContentByAudioId(id, callback) {
         RequestService.sendRequest()
             .url(`${getServiceUrl()}/agent/${id}/chat-history/audio`)
             .method('GET')
@@ -279,7 +279,7 @@ export default {
             })
             .networkFail(() => {
                 RequestService.reAjaxFun(() => {
-                    this.getContentByAudioId(id,callback);
+                    this.getContentByAudioId(id, callback);
                 });
             }).send();
     },
@@ -300,7 +300,7 @@ export default {
                 });
             }).send();
     },
-    
+
     // 更新智能体模板
     updateAgentTemplate(templateData, callback) {
         RequestService.sendRequest()
@@ -317,7 +317,7 @@ export default {
                 });
             }).send();
     },
-    
+
     // 删除智能体模板
     deleteAgentTemplate(id, callback) {
         RequestService.sendRequest()
@@ -333,7 +333,7 @@ export default {
                 });
             }).send();
     },
-    
+
     // 批量删除智能体模板
     batchDeleteAgentTemplate(ids, callback) {
         RequestService.sendRequest()
@@ -363,6 +363,22 @@ export default {
                 console.error('获取单个模板失败:', err);
                 RequestService.reAjaxFun(() => {
                     this.getAgentTemplateById(templateId, callback);
+                });
+            }).send();
+    },
+
+    // 获取聊天记录下载链接UUID
+    getDownloadUrl(agentId, sessionId, callback) {
+        RequestService.sendRequest()
+            .url(`${getServiceUrl()}/agent/chat-history/getDownloadUrl/${agentId}/${sessionId}`)
+            .method('POST')
+            .success((res) => {
+                RequestService.clearRequestTime();
+                callback(res);
+            })
+            .networkFail(() => {
+                RequestService.reAjaxFun(() => {
+                    this.getDownloadUrl(agentId, sessionId, callback);
                 });
             }).send();
     },

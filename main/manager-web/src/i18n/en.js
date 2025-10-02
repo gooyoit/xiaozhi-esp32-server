@@ -5,7 +5,7 @@ export default {
   'login.requiredCaptcha': 'Captcha cannot be empty',
   'login.requiredMobile': 'Please enter a valid mobile phone number',
   'login.loginSuccess': 'Login successful!',
-  
+
   // HeaderBar组件文本
   'header.smartManagement': 'Agents',
   'header.modelConfig': 'Models',
@@ -15,6 +15,8 @@ export default {
   'header.paramManagement': 'Params Management',
   'header.dictManagement': 'Dict Management',
   'header.agentTemplate': 'Default Role Templates', // 添加这一行
+  'header.searchHistory': 'Search History',
+  'header.clearHistory': 'Clear History',
 
   // McpToolCallDialog component text
   'mcpToolCall.title': 'Tool Call',
@@ -38,7 +40,7 @@ export default {
   'mcpToolCall.copyResult': 'Copy Result',
   'mcpToolCall.noResultYet': 'No result yet',
   'mcpToolCall.loadingToolList': 'Loading tool list...',
-  
+
   // Tool names
   'mcpToolCall.toolName.getDeviceStatus': 'View Device Status',
   'mcpToolCall.toolName.setVolume': 'Set Volume',
@@ -52,7 +54,7 @@ export default {
   'mcpToolCall.toolName.snapshot': 'Screen Snapshot',
   'mcpToolCall.toolName.previewImage': 'Preview Image',
   'mcpToolCall.toolName.setDownloadUrl': 'Set Download URL',
-  
+
   // Tool categories
   'mcpToolCall.category.audio': 'Audio',
   'mcpToolCall.category.display': 'Display',
@@ -60,7 +62,7 @@ export default {
   'mcpToolCall.category.system': 'System',
   'mcpToolCall.category.assets': 'Assets',
   'mcpToolCall.category.deviceInfo': 'Device Info',
-  
+
   // Table categories and properties
   'mcpToolCall.table.audioSpeaker': 'Audio Speaker',
   'mcpToolCall.table.screen': 'Screen',
@@ -80,7 +82,7 @@ export default {
   'mcpToolCall.table.component': 'Component',
   'mcpToolCall.table.property': 'Property',
   'mcpToolCall.table.value': 'Value',
-  
+
   'mcpToolCall.prop.volume': 'Volume',
   'mcpToolCall.prop.brightness': 'Brightness',
   'mcpToolCall.prop.theme': 'Theme',
@@ -112,7 +114,7 @@ export default {
   'mcpToolCall.prop.url': 'URL',
   'mcpToolCall.prop.quality': 'Quality',
   'mcpToolCall.prop.question': 'Question',
-  
+
   // Tool help texts
   'mcpToolCall.help.getDeviceStatus': 'View the current running status of the device, including volume, screen, battery and other information.',
   'mcpToolCall.help.setVolume': 'Adjust the volume of the device, please enter a value between 0-100.',
@@ -126,7 +128,7 @@ export default {
   'mcpToolCall.help.snapshot': 'Take a screenshot of the current screen and upload it to the specified URL.',
   'mcpToolCall.help.previewImage': 'Preview images from the specified URL on the device screen.',
   'mcpToolCall.help.setDownloadUrl': 'Set the download address for device resource files.',
-  
+
   // Other text
   'mcpToolCall.text.strong': 'Strong',
   'mcpToolCall.text.medium': 'Medium',
@@ -231,7 +233,7 @@ export default {
 
   // AddModelDialog component related
   'addModelDialog.requiredSupplier': 'Please select a supplier',
-  
+
   // Register page related
   'register.title': 'Create Account',
   'register.welcome': 'Welcome to XiaoZhi AI',
@@ -384,10 +386,12 @@ export default {
   'register.registerSuccess': 'Registration successful!',
   'register.registerFailed': 'Registration failed',
   'register.passwordsNotMatch': 'The two passwords do not match',
+  'register.secondsLater': 'seconds later',
 
   // Retrieve password page text
   'retrievePassword.title': 'Reset Password',
   'retrievePassword.welcome': 'PASSWORD RETRIEVE',
+  'retrievePassword.subtitle': 'Retrieve Password',
   'retrievePassword.mobile': 'Mobile',
   'retrievePassword.mobilePlaceholder': 'Please enter mobile number',
   'retrievePassword.captcha': 'Verification Code',
@@ -399,6 +403,7 @@ export default {
   'retrievePassword.confirmNewPassword': 'Confirm New Password',
   'retrievePassword.confirmNewPasswordPlaceholder': 'Please confirm new password',
   'retrievePassword.getMobileCaptcha': 'Get Verification Code',
+  'retrievePassword.resetButton': 'Reset Password',
   'retrievePassword.updateButton': 'Update Now',
   'retrievePassword.goToLogin': 'Back to Login',
   'retrievePassword.inputCorrectMobile': 'Please enter correct mobile number',
@@ -411,6 +416,7 @@ export default {
   'retrievePassword.newPasswordRequired': 'New password cannot be empty',
   'retrievePassword.confirmNewPasswordRequired': 'Confirm new password cannot be empty',
   'retrievePassword.passwordUpdateSuccess': 'Password updated successfully',
+  'retrievePassword.agreeTo': 'Reset means agree',
 
   // Change password page text
   'changePassword.title': 'Change Password',
@@ -496,6 +502,9 @@ export default {
   'chatHistory.selectSession': 'Please select a session to view chat history',
   'chatHistory.today': 'Today',
   'chatHistory.yesterday': 'Yesterday',
+  'chatHistory.downloadCurrentSession': 'Download current session chat history',
+  'chatHistory.downloadCurrentWithPreviousSessions': 'Download current and previous 20 sessions chat history',
+  'chatHistory.downloadLinkFailed': 'Failed to get download link',
   'cache.status': 'Cache Status',
   'cache.cdnEnabled': 'CDN Mode Enabled',
   'cache.cdnDisabled': 'CDN Mode Disabled',
@@ -631,7 +640,7 @@ export default {
   'providerManagement.selectToDelete': 'Please select providers to delete first',
   'providerManagement.confirmDelete': 'Are you sure to delete the selected {count} providers?',
   'providerManagement.viewFields': 'View Fields',
- 
+
   // Common Text
   'common.all': 'All',
   'common.search': 'Search',
@@ -661,7 +670,7 @@ export default {
   'common.confirm': 'Confirm',
   'common.cancel': 'Cancel',
   'common.sensitive': 'Sensitive',
-  
+
   // Language switch
   'language.zhCN': '中文简体',
   'language.zhTW': '中文繁體',
@@ -1029,7 +1038,7 @@ export default {
   'agentTemplateManagement.batchDeleteFailed': 'Template batch deletion failed',
   'agentTemplateManagement.deleteBackendError': 'Deletion failed, please check if the backend service is normal',
   'agentTemplateManagement.deleteCancelled': 'Deletion cancelled',
-  
+
   // templateQuickConfig
   'templateQuickConfig.title': 'Module Quick Configuration',
   'templateQuickConfig.agentSettings.agentName': 'Nickname',
@@ -1047,5 +1056,12 @@ export default {
   'templateQuickConfig.templateNotFound': 'Template not found',
   'warning': 'Warning',
   'info': 'Info',
-  'common.networkError': 'Network request failed'
+  'common.networkError': 'Network request failed',
+  'sm2.publicKeyNotConfigured': 'SM2 public key not configured, please contact administrator',
+  'sm2.encryptionFailed': 'Password encryption failed',
+  'sm2.keyGenerationFailed': 'Key pair generation failed',
+  'sm2.invalidPublicKey': 'Invalid public key format',
+  'sm2.encryptionError': 'Error occurred during encryption',
+  'sm2.publicKeyRetry': 'Retrying to get public key...',
+  'sm2.publicKeyRetryFailed': 'Public key retrieval retry failed'
 }

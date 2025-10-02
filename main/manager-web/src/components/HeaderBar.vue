@@ -66,10 +66,29 @@
       <!-- 右侧元素 -->
       <div class="header-right">
         <div class="search-container" v-if="$route.path === '/home' && !(isSuperAdmin && isSmallScreen)">
-          <el-input v-model="search" :placeholder="$t('header.searchPlaceholder')" class="custom-search-input"
-            @keyup.enter.native="handleSearch">
-            <i slot="suffix" class="el-icon-search search-icon" @click="handleSearch"></i>
-          </el-input>
+          <div class="search-wrapper">
+            <el-input v-model="search" :placeholder="$t('header.searchPlaceholder')" class="custom-search-input"
+              @keyup.enter.native="handleSearch" @focus="showSearchHistory" @blur="hideSearchHistory" clearable
+              ref="searchInput">
+              <i slot="suffix" class="el-icon-search search-icon" @click="handleSearch"></i>
+            </el-input>
+            <!-- 搜索历史下拉框 -->
+            <div v-if="showHistory && searchHistory.length > 0" class="search-history-dropdown">
+              <div class="search-history-header">
+                <span>{{ $t('header.searchHistory') }}</span>
+                <el-button type="text" size="small" class="clear-history-btn" @click="clearSearchHistory">
+                  {{ $t('header.clearHistory') }}
+                </el-button>
+              </div>
+              <div class="search-history-list">
+                <div v-for="(item, index) in searchHistory" :key="index" class="search-history-item"
+                  @click.stop="selectSearchHistory(item)">
+                  <span class="history-text">{{ item }}</span>
+                  <i class="el-icon-close clear-item-icon" @click.stop="removeSearchHistory(index)"></i>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- 语言切换下拉菜单 -->
@@ -99,7 +118,7 @@
           </span>
           <el-dropdown-menu slot="dropdown">
             <el-dropdown-item @click.native="showChangePasswordDialog">{{ $t('header.changePassword')
-              }}</el-dropdown-item>
+            }}</el-dropdown-item>
             <el-dropdown-item @click.native="handleLogout">{{ $t('header.logout') }}</el-dropdown-item>
           </el-dropdown-menu>
         </el-dropdown>
@@ -134,7 +153,12 @@ export default {
       userDropdownVisible: false,
       paramDropdownVisible: false,
       languageDropdownVisible: false,
-      isSmallScreen: false
+      isSmallScreen: false,
+      // 搜索历史相关
+      searchHistory: [],
+      showHistory: false,
+      SEARCH_HISTORY_KEY: 'xiaozhi_search_history',
+      MAX_HISTORY_COUNT: 3
     }
   },
   computed: {
@@ -165,6 +189,8 @@ export default {
     this.fetchUserInfo();
     this.checkScreenSize();
     window.addEventListener('resize', this.checkScreenSize);
+    // 从localStorage加载搜索历史
+    this.loadSearchHistory();
   },
   //移除事件监听器
   beforeDestroy() {
@@ -222,6 +248,9 @@ export default {
         return;
       }
 
+      // 保存搜索历史
+      this.saveSearchHistory(searchValue);
+
       try {
         // 创建不区分大小写的正则表达式
         const regex = new RegExp(searchValue, 'i');
@@ -233,6 +262,85 @@ export default {
           message: this.$t('message.error'),
           showClose: true
         });
+      }
+
+      // 搜索完成后让输入框失去焦点，从而触发blur事件隐藏搜索历史
+      if (this.$refs.searchInput) {
+        this.$refs.searchInput.blur();
+      }
+    },
+
+    // 显示搜索历史
+    showSearchHistory() {
+      this.showHistory = true;
+    },
+
+    // 隐藏搜索历史
+    hideSearchHistory() {
+      // 延迟隐藏，以便点击事件能够执行
+      setTimeout(() => {
+        this.showHistory = false;
+      }, 200);
+    },
+
+    // 加载搜索历史
+    loadSearchHistory() {
+      try {
+        const history = localStorage.getItem(this.SEARCH_HISTORY_KEY);
+        if (history) {
+          this.searchHistory = JSON.parse(history);
+        }
+      } catch (error) {
+        console.error('加载搜索历史失败:', error);
+        this.searchHistory = [];
+      }
+    },
+
+    // 保存搜索历史
+    saveSearchHistory(keyword) {
+      if (!keyword || this.searchHistory.includes(keyword)) {
+        return;
+      }
+
+      // 添加到历史记录开头
+      this.searchHistory.unshift(keyword);
+
+      // 限制历史记录数量
+      if (this.searchHistory.length > this.MAX_HISTORY_COUNT) {
+        this.searchHistory = this.searchHistory.slice(0, this.MAX_HISTORY_COUNT);
+      }
+
+      // 保存到localStorage
+      try {
+        localStorage.setItem(this.SEARCH_HISTORY_KEY, JSON.stringify(this.searchHistory));
+      } catch (error) {
+        console.error('保存搜索历史失败:', error);
+      }
+    },
+
+    // 选择搜索历史项
+    selectSearchHistory(keyword) {
+      this.search = keyword;
+      this.handleSearch();
+    },
+
+    // 移除单个搜索历史项
+    removeSearchHistory(index) {
+      this.searchHistory.splice(index, 1);
+      try {
+        localStorage.setItem(this.SEARCH_HISTORY_KEY, JSON.stringify(this.searchHistory));
+      } catch (error) {
+        console.error('更新搜索历史失败:', error);
+      }
+    },
+
+    // 清空所有搜索历史
+    clearSearchHistory() {
+      this.searchHistory = [];
+      try {
+        localStorage.removeItem(this.SEARCH_HISTORY_KEY);
+      } catch (error) {
+        console.error('清空搜索历史失败:', error);
       }
     },
     // 显示修改密码弹窗
@@ -369,6 +477,77 @@ export default {
   flex: 0.9;
   min-width: 60px;
   max-width: none;
+}
+
+.search-wrapper {
+  position: relative;
+}
+
+.search-history-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e4e6ef;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  margin-top: 2px;
+}
+
+.search-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 12px;
+  color: #909399;
+}
+
+.clear-history-btn {
+  color: #909399;
+  font-size: 11px;
+  padding: 0;
+  height: auto;
+}
+
+.clear-history-btn:hover {
+  color: #606266;
+}
+
+.search-history-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.search-history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #606266;
+}
+
+.search-history-item:hover {
+  background-color: #f5f7fa;
+}
+
+.clear-item-icon {
+  font-size: 10px;
+  color: #909399;
+  visibility: hidden;
+}
+
+.search-history-item:hover .clear-item-icon {
+  visibility: visible;
+}
+
+.clear-item-icon:hover {
+  color: #ff4949;
 }
 
 .custom-search-input>>>.el-input__inner {
